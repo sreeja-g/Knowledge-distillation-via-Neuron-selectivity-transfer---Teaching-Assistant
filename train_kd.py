@@ -108,65 +108,8 @@ def main():
 	logging.info('Teacher param size = %fMB', count_parameters_in_MB(tnet))
 	logging.info('-----------------------------------------------')
 
-	# define loss functions
-	if args.kd_mode == 'logits':
-		criterionKD = Logits()
-	elif args.kd_mode == 'st':
-		criterionKD = SoftTarget(args.T)
-	elif args.kd_mode == 'at':
-		criterionKD = AT(args.p)
-	elif args.kd_mode == 'fitnet':
-		criterionKD = Hint()
-	elif args.kd_mode == 'nst':
+	if args.kd_mode == 'nst':
 		criterionKD = NST()
-	elif args.kd_mode == 'pkt':
-		criterionKD = PKTCosSim()
-	elif args.kd_mode == 'fsp':
-		criterionKD = FSP()
-	elif args.kd_mode == 'rkd':
-		criterionKD = RKD(args.w_dist, args.w_angle)
-	elif args.kd_mode == 'ab':
-		criterionKD = AB(args.m)
-	elif args.kd_mode == 'sp':
-		criterionKD = SP()
-	elif args.kd_mode == 'sobolev':
-		criterionKD = Sobolev()
-	elif args.kd_mode == 'cc':
-		criterionKD = CC(args.gamma, args.P_order)
-	elif args.kd_mode == 'lwm':
-		criterionKD = LwM()
-	elif args.kd_mode == 'irg':
-		criterionKD = IRG(args.w_irg_vert, args.w_irg_edge, args.w_irg_tran)
-	elif args.kd_mode == 'vid':
-		s_channels  = snet.module.get_channel_num()[1:4]
-		t_channels  = tnet.module.get_channel_num()[1:4]
-		criterionKD = []
-		for s_c, t_c in zip(s_channels, t_channels):
-			criterionKD.append(VID(s_c, int(args.sf*t_c), t_c, args.init_var))
-		criterionKD = [c.cuda() for c in criterionKD] if args.cuda else criterionKD
-		criterionKD = [None] + criterionKD # None is a placeholder
-	elif args.kd_mode == 'ofd':
-		s_channels  = snet.module.get_channel_num()[1:4]
-		t_channels  = tnet.module.get_channel_num()[1:4]
-		criterionKD = []
-		for s_c, t_c in zip(s_channels, t_channels):
-			criterionKD.append(OFD(s_c, t_c).cuda() if args.cuda else OFD(s_c, t_c))
-		criterionKD = [None] + criterionKD # None is a placeholder
-	elif args.kd_mode == 'afd':
-		# t_channels is same with s_channels
-		s_channels  = snet.module.get_channel_num()[1:4]
-		t_channels  = tnet.module.get_channel_num()[1:4]
-		criterionKD = []
-		for t_c in t_channels:
-			criterionKD.append(AFD(t_c, args.att_f).cuda() if args.cuda else AFD(t_c, args.att_f))
-		criterionKD = [None] + criterionKD # None is a placeholder
-		# # t_chws is same with s_chws
-		# s_chws = snet.module.get_chw_num()[1:4]
-		# t_chws = tnet.module.get_chw_num()[1:4]
-		# criterionKD = []
-		# for t_chw in t_chws:
-		# 	criterionKD.append(AFD(t_chw).cuda() if args.cuda else AFD(t_chw))
-		# criterionKD = [None] + criterionKD # None is a placeholder
 	else:
 		raise Exception('Invalid kd mode...')
 	if args.cuda:
@@ -189,45 +132,7 @@ def main():
 									weight_decay = args.weight_decay,
 									nesterov = True)
 
-	# define transforms
-	# if args.data_name == 'cifar10':
-	# 	dataset = dst.CIFAR10
-	# 	mean = (0.4914, 0.4822, 0.4465)
-	# 	std  = (0.2470, 0.2435, 0.2616)
-	# elif args.data_name == 'cifar100':
-	# 	dataset = dst.CIFAR100
-	# 	mean = (0.5071, 0.4865, 0.4409)
-	# 	std  = (0.2673, 0.2564, 0.2762)
-	# else:
-	# 	raise Exception('Invalid dataset name...')
-
-	# train_transform = transforms.Compose([
-	# 		transforms.Pad(4, padding_mode='reflect'),
-	# 		transforms.RandomCrop(32),
-	# 		transforms.RandomHorizontalFlip(),
-	# 		transforms.ToTensor(),
-	# 		transforms.Normalize(mean=mean,std=std)
-	# 	])
-	# test_transform = transforms.Compose([
-	# 		transforms.CenterCrop(32),
-	# 		transforms.ToTensor(),
-	# 		transforms.Normalize(mean=mean,std=std)
-	# 	])
-
-	# # define data loader
-	# train_loader = torch.utils.data.DataLoader(
-	# 		dataset(root      = args.img_root,
-	# 				transform = train_transform,
-	# 				train     = True,
-	# 				download  = True),
-	# 		batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
-	# test_loader = torch.utils.data.DataLoader(
-	# 		dataset(root      = args.img_root,
-	# 				transform = test_transform,
-	# 				train     = False,
-	# 				download  = True),
-	# 		batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True)
-
+	
 	train_loader = torch.load('datasets/chest_xray/train_dataloader.pth')
 	test_loader = torch.load('datasets/chest_xray/test_dataloader.pth')
 
